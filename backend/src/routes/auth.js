@@ -1,0 +1,52 @@
+const router = require('express').Router();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const pool = require('../db');
+
+// REGISTER
+router.post('/register', async (req, res) => {
+  const { name, email, password } = req.body;
+
+  try {
+    const hash = await bcrypt.hash(password, 10);
+
+    await pool.query(
+      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
+      [name, email, hash]
+    );
+
+    res.json({ message: 'Registered successfully' });
+  } catch (e) {
+    // important: email uniqueness handled by DB index
+    res.status(400).json({ message: 'Email already exists' });
+  }
+});
+
+// LOGIN
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  const result = await pool.query(
+    'SELECT * FROM users WHERE email = $1',
+    [email]
+  );
+
+  const user = result.rows[0];
+
+  if (!user || user.status === 'blocked') {
+    return res.status(401).json({ message: 'Access denied' });
+  }
+
+  const ok = await bcrypt.compare(password, user.password_hash);
+  if (!ok) return res.sendStatus(401);
+
+  await pool.query(
+    'UPDATE users SET last_login = NOW() WHERE id = $1',
+    [user.id]
+  );
+
+  const token = jwt.sign({ id: user.id }, 'SECRET');
+  res.json({ token });
+});
+
+module.exports = router;
