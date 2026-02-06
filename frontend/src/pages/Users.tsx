@@ -18,9 +18,11 @@ export default function Users() {
       const res = await api.get('/users');
       setUsers(res.data);
       setSelected([]);
-    } catch {
-      // НИЧЕГО НЕ ДЕЛАЕМ
-      // если 401/403 — interceptor сам сделает redirect
+    } catch (e: any) {
+      if (e.response?.status === 401 || e.response?.status === 403) {
+        localStorage.removeItem('token');
+        window.location.replace('/login');
+      }
     }
   };
 
@@ -31,8 +33,11 @@ export default function Users() {
     try {
       await api.post(url, { ids: selected });
       load();
-    } catch {
-      // interceptor разрулит
+    } catch (e: any) {
+      if (e.response?.status === 401 || e.response?.status === 403) {
+        localStorage.removeItem('token');
+        window.location.replace('/login');
+      }
     }
   };
 
