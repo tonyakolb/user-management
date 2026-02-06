@@ -16,13 +16,15 @@ api.interceptors.response.use(
   response => response,
   error => {
     const status = error.response?.status;
-    const url = error.config?.url;
+    const hadAuthHeader = Boolean(
+      error.config?.headers?.Authorization
+    );
 
-    if (url?.includes('/auth/login')) {
+    if (!hadAuthHeader) {
       return Promise.reject(error);
     }
 
-    if ((status === 401 || status === 403) && localStorage.getItem('token')) {
+    if (status === 401 || status === 403) {
       localStorage.removeItem('token');
       window.location.replace('/login');
     }
@@ -30,6 +32,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 
 
 export default api;
