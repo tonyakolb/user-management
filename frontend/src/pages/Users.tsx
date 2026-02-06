@@ -10,22 +10,36 @@ type User = {
 };
 
 export default function Users() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[] | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
 
   const load = async () => {
-    const res = await api.get('/users');
-    setUsers(res.data);
-    setSelected([]);
+    try {
+      const res = await api.get('/users');
+      setUsers(res.data);
+      setSelected([]);
+    } catch {
+      // НИЧЕГО НЕ ДЕЛАЕМ
+      // если 401/403 — interceptor сам сделает redirect
+    }
   };
 
   useEffect(() => {
     load();
   }, []);
   const action = async (url: string) => {
-    await api.post(url, { ids: selected });
-    load();
+    try {
+      await api.post(url, { ids: selected });
+      load();
+    } catch {
+      // interceptor разрулит
+    }
   };
+
+  if (users === null) {
+    return null;
+  }
+
   return (
     <div className="container mt-4">
       <h3>User Management</h3>
