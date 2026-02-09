@@ -33,8 +33,12 @@ router.post('/login', async (req, res) => {
 
   const user = result.rows[0];
 
-  if (!user || user.status === 'blocked') {
-    return res.status(401).json({ message: 'Access denied' });
+  if (!user) {
+    return res.status(401).json({ message: 'Invalid credentials' });
+  }
+
+  if (user.status === 'blocked') {
+    return res.status(403).json({ message: 'User is blocked' });
   }
 
   const ok = await bcrypt.compare(password, user.password_hash);
@@ -45,7 +49,7 @@ router.post('/login', async (req, res) => {
     [user.id]
   );
 
-  const token = jwt.sign({ id: user.id }, 'SECRET');
+  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
   res.json({ token });
 });
 

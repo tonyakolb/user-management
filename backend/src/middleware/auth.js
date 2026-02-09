@@ -23,7 +23,6 @@ module.exports = async function auth(req, res, next) {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    // 🔥 ВОТ ЭТО ОБЯЗАТЕЛЬНО
     if (user.status === 'blocked') {
       return res.status(403).json({ message: 'User is blocked' });
     }
